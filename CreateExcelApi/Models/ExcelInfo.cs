@@ -13,10 +13,7 @@ namespace CreateExcelApi.Models
         private readonly short _titleFontSize;
         private readonly short _subTitleFontSize;
         private readonly string _fontName;
-        private Dictionary<string, ICellStyle> _cellStyles;
-        private IWorkbook _workbook;
-
-        private MemoryStream _excelStream;
+        private readonly Dictionary<string, ICellStyle> _cellStyles;
 
         private readonly string STYLE_DEFAULT;
         private readonly string STYLE_DEFAULT_BOLD;
@@ -24,6 +21,8 @@ namespace CreateExcelApi.Models
         private readonly string STYLE_SUB_TITLE;
         private readonly string STYLE_PRINT_INFO;
 
+        private IWorkbook _workbook;
+        private MemoryStream _excelStream;
         public ExcelInfo(ILogger<ExcelInfo> logger)
         {
             _fontSize = 12;
@@ -36,7 +35,7 @@ namespace CreateExcelApi.Models
             STYLE_DEFAULT_BOLD = $"{(int)HorizontalAlignment.Left}:{(int)VerticalAlignment.Center}:{(int)CellFontColor.Black}:{_fontSize}:B";
             STYLE_TITLE = $"{(int)HorizontalAlignment.Center}:{(int)VerticalAlignment.Center}:{(int)CellFontColor.Black}:{_titleFontSize}:B";
             STYLE_SUB_TITLE = $"{(int)HorizontalAlignment.Center}:{(int)VerticalAlignment.Center}:{(int)CellFontColor.Black}:{_subTitleFontSize}";
-            STYLE_PRINT_INFO = $"{(int)HorizontalAlignment.Center}:{(int)VerticalAlignment.Center}:{(int)CellFontColor.Black}:{_fontSize}";
+            STYLE_PRINT_INFO = $"{(int)HorizontalAlignment.Right}:{(int)VerticalAlignment.Center}:{(int)CellFontColor.Black}:{_fontSize}";
 
             _logger = logger;
         }
@@ -45,7 +44,7 @@ namespace CreateExcelApi.Models
         public string PrintEmployee { get; set; } = "user";
         public ICollection<SheetInfo> Sheets { get; set; } = Array.Empty<SheetInfo>();
 
-        public string PrintInfo => $"列印時間：{PrintTime:yyyy-MM-dd HH:mm:ss}    列印人員：{PrintEmployee}";
+        public string PrintInfo => $"{PrintTime:yyyy-MM-dd HH:mm:ss}    {PrintEmployee}";
 
         private void InitialCellStyle()
         {
@@ -59,11 +58,11 @@ namespace CreateExcelApi.Models
             font.FontHeightInPoints = _fontSize;
             font.IsBold = false;
             style.SetFont(font);
-            _cellStyles.Add(STYLE_DEFAULT, style);
-            GetCellStyles(_workbook, HorizontalAlignment.Left, VerticalAlignment.Center, CellFontColor.Black, _fontSize, true);
-            GetCellStyles(_workbook, HorizontalAlignment.Center, VerticalAlignment.Center, CellFontColor.Black, _titleFontSize, true);
-            GetCellStyles(_workbook, HorizontalAlignment.Center, VerticalAlignment.Center, CellFontColor.Black, _subTitleFontSize);
-            GetCellStyles(_workbook, HorizontalAlignment.Center, VerticalAlignment.Center, CellFontColor.Black, _fontSize);
+            _cellStyles.Add(STYLE_DEFAULT, style); //STYLE_DEFAULT
+            GetCellStyles(_workbook, HorizontalAlignment.Left, VerticalAlignment.Center, CellFontColor.Black, _fontSize, true); //STYLE_DEFAULT_BOLD
+            GetCellStyles(_workbook, HorizontalAlignment.Center, VerticalAlignment.Center, CellFontColor.Black, _titleFontSize, true); //STYLE_TITLE
+            GetCellStyles(_workbook, HorizontalAlignment.Center, VerticalAlignment.Center, CellFontColor.Black, _subTitleFontSize); //STYLE_SUB_TITLE
+            GetCellStyles(_workbook, HorizontalAlignment.Right, VerticalAlignment.Center, CellFontColor.Black, _fontSize); //STYLE_PRINT_INFO
         }
 
         private ICellStyle GetCellStyles(IWorkbook workbook, HorizontalAlignment horizontalAlign, VerticalAlignment verticalAlign, CellFontColor cellFontColor, short fontSize, bool isBold = false)
@@ -135,7 +134,7 @@ namespace CreateExcelApi.Models
                         {
                             break;
                         }
-                        cell.CellStyle = _cellStyles[STYLE_DEFAULT];
+                        cell.CellStyle = _cellStyles[STYLE_PRINT_INFO];
                         cell.SetCellValue(sheetInfo.SearchCondition);
                         rowNum++;
                         break;
@@ -166,6 +165,8 @@ namespace CreateExcelApi.Models
                 return _excelStream;
             }
 
+            ICreationHelper factory = _workbook.GetCreationHelper();
+            IClientAnchor anchor = factory.CreateClientAnchor();
             InitialCellStyle();
             int sheetNumber = 1;
             foreach (var sheetInfo in Sheets)
@@ -179,23 +180,25 @@ namespace CreateExcelApi.Models
                     sheetInfo.Name = $"Sheet{sheetNumber++}";
                 }
                 ISheet sheet = _workbook.CreateSheet(sheetInfo.Name);
+                IDrawing drawing = sheet.CreateDrawingPatriarch();
                 int rowNum = CreateSheetTitle(sheet, sheetInfo) + 2;
                 if (sheetInfo.TableHeaders != null)
                 {
+                    int columnCount = sheetInfo.TableHeaders.Count;
                     IRow header = sheet.CreateRow(rowNum);
-                    for (int c = 0; c < sheetInfo.TableHeaders.Count; c++)
+                    for (int c = 0; c < columnCount; c++)
                     {
                         ICell cell = header.CreateCell(c);
                         var cellInfo = sheetInfo.TableHeaders.ElementAt(c);
-                        cell.SetCellValue(cellInfo.Value);
-                        //if (!string.IsNullOrWhiteSpace(cellInfo.Comment))
-                        //{
-                        //    Comment comment = drawing.createCellComment(anchor);
-                        //    comment.setAuthor(printEmployee);
-                        //    comment.setString(factory.createRichTextString(cellInfo.comment));
-                        //    comment.setVisible(Boolean.FALSE);
-                        //    cell.setCellComment(comment);
-                        //}
+                        cell.SetCellValue(cellInfo.Name);
+                        if (!string.IsNullOrWhiteSpace(cellInfo.Comment))
+                        {
+                            IComment comment = drawing.CreateCellComment(anchor);
+                            comment.Author = PrintEmployee;
+                            comment.String = factory.CreateRichTextString(cellInfo.Comment);
+                            comment.Visible = false;
+                            cell.CellComment = comment;
+                        }
                         cell.CellStyle = _cellStyles[STYLE_DEFAULT_BOLD];
                         if (sheetInfo.Data == null)
                         {
@@ -213,6 +216,12 @@ namespace CreateExcelApi.Models
                             dataCell.SetCellValue(values.ElementAt(c));
                             dataCell.CellStyle = GetCellStyles(_workbook, cellInfo.HorizontalAlign, cellInfo.VerticalAlign, cellInfo.FontColor, cellInfo.FontSize);
                         }
+                    }
+
+                    for(int i = 0; i < columnCount; i++)
+                    {
+                        sheet.AutoSizeColumn(i);
+                        GC.Collect();
                     }
                 }
             }

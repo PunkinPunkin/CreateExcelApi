@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CreateExcelApi.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class ExcelController : ControllerBase
     {
         private readonly ILogger<ExcelController> _logger;

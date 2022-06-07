@@ -1,43 +1,3 @@
-# CreateExcelApi
-Generating excel by request json.
-
-|Method|URL                          |Response Format|
-|------|-----------------------------|---------------|
-|GET   |swagger/index.html           |html           |
-|POST  |api/Excel?fileName={fileName}|attachment     |
-
-## Schemas
-### ExcelInfo
-|Name         |Type             |Null?|Default     |Comment|
-|-------------|-----------------|-----|------------|-------|
-|printTime    |Date             |V    |Current Time|       |
-|printEmployee|string           |     |            |       |
-|sheets       |Array\<[SheetInfo](#sheetinfo)>||||
-
-### SheetInfo
-|Name           |Type                 |Null?|Default |Comment     |
-|---------------|---------------------|-----|--------|------------|
-|name           |string               |     |"Sheet1"|sheet's name|
-|title          |string               |V    |        |            |
-|subTitle       |string               |V    |        |            |
-|searchCondition|string               |V    |        |            |
-|tableHeaders   |Array\<[CellInfo](#cellinfo)>||||
-|data           |Array<Array\<string>>||||
-
-### CellInfo
-|Name           |Type  |Null?|Default|Comment            |
-|---------------|------|-----|-------|-------------------|
-|name           |string|     |       |table header's name|
-|comment        |string|V    |null   |                   |
-|fontSize       |number|V    |15     |                   |
-|fontColor      |number|V    |8      |`Black`: 8<br>`White`: 9<br>`Red`: 10<br>`Blue`: 12<br>`Green`: 17|
-|horizontalAlign|number|V    |0      |`General`: 0<br>`Left`: 1<br>`Center`: 2<br>`Right`: 3<br>`Justify`: 5<br>`Fill`: 4<br>`CenterSelection`: 6<br>`Distributed`: 7|
-|verticalAlign  |number|V    |1      |`Top`: 0<br>`Center`: 1<br>`Bottom`: 2<br>`Justify`: 3<br>`Distributed`: 4|
-
-## Demo
-* [sample.xlsx](/CreateExcelApi/Sample/sample.xlsx)
-* [sample.json](/CreateExcelApi/Sample/sample.json)
-```json
 {
   "printTime": "2022-06-05T15:51:37.762Z",
   "printEmployee": "admin",
@@ -102,5 +62,3 @@ Generating excel by request json.
     }
   ]
 }
-```
-![sample.jpg](/CreateExcelApi/Sample/sample.jpg "excel result")
