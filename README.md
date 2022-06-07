@@ -29,7 +29,7 @@ Generating excel by request json.
 |---------------|------|-----|-------|-------------------|
 |name           |string|     |       |table header's name|
 |comment        |string|V    |null   |                   |
-|fontSize       |number|V    |15     |                   |
+|fontSize       |number|V    |12     |                   |
 |fontColor      |number|V    |8      |`Black`: 8<br>`White`: 9<br>`Red`: 10<br>`Blue`: 12<br>`Green`: 17|
 |horizontalAlign|number|V    |0      |`General`: 0<br>`Left`: 1<br>`Center`: 2<br>`Right`: 3<br>`Justify`: 5<br>`Fill`: 4<br>`CenterSelection`: 6<br>`Distributed`: 7|
 |verticalAlign  |number|V    |1      |`Top`: 0<br>`Center`: 1<br>`Bottom`: 2<br>`Justify`: 3<br>`Distributed`: 4|
