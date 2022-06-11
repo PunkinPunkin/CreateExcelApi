@@ -1,4 +1,5 @@
-﻿using CreateExcelApi.Models.Enums;
+﻿using System.Text.Json.Serialization;
+using CreateExcelApi.Models.Enums;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
@@ -9,21 +10,40 @@ namespace CreateExcelApi.Models
     {
         private readonly ILogger<ExcelInfo> _logger;
 
-        private readonly short _fontSize;
-        private readonly short _titleFontSize;
-        private readonly short _subTitleFontSize;
-        private readonly string _fontName;
-        private readonly Dictionary<string, ICellStyle> _cellStyles;
+        private short _fontSize;
+        private short _titleFontSize;
+        private short _subTitleFontSize;
+        private string _fontName;
+        private Dictionary<string, ICellStyle> _cellStyles;
 
-        private readonly string STYLE_DEFAULT;
-        private readonly string STYLE_DEFAULT_BOLD;
-        private readonly string STYLE_TITLE;
-        private readonly string STYLE_SUB_TITLE;
-        private readonly string STYLE_PRINT_INFO;
+        private string STYLE_DEFAULT;
+        private string STYLE_DEFAULT_BOLD;
+        private string STYLE_TITLE;
+        private string STYLE_SUB_TITLE;
+        private string STYLE_PRINT_INFO;
 
         private IWorkbook _workbook;
         private MemoryStream _excelStream;
+
+        [JsonConstructor]
+        public ExcelInfo()
+        {
+            Initial();
+        }
+        
         public ExcelInfo(ILogger<ExcelInfo> logger)
+        {
+            _logger = logger;
+            Initial();
+        }
+
+        public DateTime PrintTime { get; set; } = DateTime.Now;
+        public string PrintEmployee { get; set; } = "user";
+        public ICollection<SheetInfo> Sheets { get; set; } = Array.Empty<SheetInfo>();
+
+        public string PrintInfo => $"{PrintTime:yyyy-MM-dd HH:mm:ss}    {PrintEmployee}";
+
+        private void Initial()
         {
             _fontSize = 12;
             _titleFontSize = 18;
@@ -36,15 +56,7 @@ namespace CreateExcelApi.Models
             STYLE_TITLE = $"{(int)HorizontalAlignment.Center}:{(int)VerticalAlignment.Center}:{(int)CellFontColor.Black}:{_titleFontSize}:B";
             STYLE_SUB_TITLE = $"{(int)HorizontalAlignment.Center}:{(int)VerticalAlignment.Center}:{(int)CellFontColor.Black}:{_subTitleFontSize}";
             STYLE_PRINT_INFO = $"{(int)HorizontalAlignment.Right}:{(int)VerticalAlignment.Center}:{(int)CellFontColor.Black}:{_fontSize}";
-
-            _logger = logger;
         }
-
-        public DateTime PrintTime { get; set; } = DateTime.Now;
-        public string PrintEmployee { get; set; } = "user";
-        public ICollection<SheetInfo> Sheets { get; set; } = Array.Empty<SheetInfo>();
-
-        public string PrintInfo => $"{PrintTime:yyyy-MM-dd HH:mm:ss}    {PrintEmployee}";
 
         private void InitialCellStyle()
         {
@@ -218,7 +230,7 @@ namespace CreateExcelApi.Models
                         }
                     }
 
-                    for(int i = 0; i < columnCount; i++)
+                    for (int i = 0; i < columnCount; i++)
                     {
                         sheet.AutoSizeColumn(i);
                         GC.Collect();
